@@ -8,9 +8,12 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/go-scm/scm"
+	"github.com/jenkins-x/jx-api/v4/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx-helpers/v3/pkg/kube/jxclient"
 
 	"github.com/sirupsen/logrus"
 
+	"github.com/jenkins-x/lighthouse/pkg/clients"
 	"github.com/jenkins-x/lighthouse/pkg/filebrowser"
 	"github.com/jenkins-x/lighthouse/pkg/util"
 	"github.com/pkg/errors"
@@ -168,6 +171,10 @@ func resolveCustomSha(owner string, repo string, sha string) string {
 	if value == "" {
 		value = os.Getenv(envVar)
 	}
+	clusterCatalogValue := ClusterCatalogSha(owner, repo)
+	if clusterCatalogValue != "" {
+		value = clusterCatalogValue
+	}
 	if value != "" {
 		return value
 	}
@@ -176,6 +183,17 @@ func resolveCustomSha(owner string, repo string, sha string) string {
 		"Repo":  repo,
 	}).Warnf("no version stream version environment variable: %s", envVar)
 	return "HEAD"
+}
+
+func ClusterCatalogSha(owner string, repo string) (string) {
+	JXClient := *new(versioned.Interface)
+	jxClient, _, err := jxclient.LazyCreateJXClientAndNamespace(JXClient, "jx")
+	if err != nil {
+		logrus.Warnf("failed to create Jenkins X client: %s", err)
+		return ""
+	}
+	jxClient.JenkinsV1()
+	return ""
 }
 
 // VersionStreamEnvVar creates an environment variable name
